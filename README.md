@@ -32,44 +32,43 @@ The project supports two roles: **User** and **Librarian (Admin)**, with differe
 ├── README.md
 ├── analysis_options.yaml
 ├── android
-│   ├── app
-│   ├── build.gradle.kts
-│   ├── gradle
-│   ├── gradle.properties
-│   ├── gradlew
-│   ├── gradlew.bat
-│   ├── library_management_android.iml
-│   ├── local.properties
-│   └── settings.gradle.kts
+│ ├── app
+│ ├── build.gradle.kts
+│ ├── gradle
+│ ├── gradle.properties
+│ ├── gradlew
+│ ├── gradlew.bat
+│ ├── library_management_android.iml
+│ ├── local.properties
+│ └── settings.gradle.kts
 ├── assets
-│   ├── icons
-│   └── images
+│ ├── icons
+│ └── images
 ├── build
-│   ├── c0f4992ddb596bd8040af6c6875e3f62
-│   ├── f1cfcae37f38a8161d8abe8d9e60682d.cache.dill.track.dill
-│   ├── ios
-│   └── native_assets
+│ ├── c0f4992ddb596bd8040af6c6875e3f62
+│ ├── f1cfcae37f38a8161d8abe8d9e60682d.cache.dill.track.dill
+│ ├── ios
+│ └── native_assets
 ├── ios
-│   ├── Flutter
-│   ├── Podfile
-│   ├── Podfile.lock
-│   ├── Pods
-│   ├── Runner
-│   ├── Runner.xcodeproj
-│   ├── Runner.xcworkspace
-│   └── RunnerTests
+│ ├── Flutter
+│ ├── Podfile
+│ ├── Podfile.lock
+│ ├── Pods
+│ ├── Runner
+│ ├── Runner.xcodeproj
+│ ├── Runner.xcworkspace
+│ └── RunnerTests
 ├── lib
-│   ├── common
-│   ├── constants
-│   ├── features
-│   ├── main.dart
-│   ├── model
-│   ├── service
-│   └── utils
+│ ├── common
+│ ├── constants
+│ ├── features
+│ ├── main.dart
+│ ├── model
+│ ├── service
+│ └── utils
 ├── library_management.iml
 ├── pubspec.lock
 └── pubspec.yaml
-
 
 ---
 
