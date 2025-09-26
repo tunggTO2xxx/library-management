@@ -28,20 +28,21 @@ The project supports two roles: **User** and **Librarian (Admin)**, with differe
 
 ## 📂 Project Structure  
 
+```text
 .
 ├── README.md
 ├── analysis_options.yaml
 ├── assets
-│ ├── icons
-│ └── images
+│   ├── icons
+│   └── images
 ├── lib
-│ ├── common
-│ ├── constants
-│ ├── features
-│ ├── main.dart
-│ ├── model
-│ ├── service
-│ └── utils
+│   ├── common
+│   ├── constants
+│   ├── features
+│   ├── main.dart
+│   ├── model
+│   ├── service
+│   └── utils
 ├── library_management.iml
 ├── pubspec.lock
 └── pubspec.yaml
