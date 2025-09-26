@@ -255,8 +255,13 @@ class MongoService {
     await books.updateOne(where.id(bookId), {r'$set': updateDoc});
   }
 
-  Future<List<Book>> searchBooks(String queryText) async {
-    final pipeline = [
+  Future<List<Book>> searchBooks({
+    String? queryText,
+    String? selectedYear,
+    String? fromYear,
+    String? toYear,
+  }) async {
+    final pipeline = <Map<String, Object>>[
       {
         r'$lookup': {
           'from': 'Authors',
@@ -273,7 +278,10 @@ class MongoService {
           'as': 'categories',
         },
       },
-      {
+    ];
+
+    if (queryText != null && queryText.isNotEmpty) {
+      pipeline.add({
         r'$match': {
           r'$or': [
             {
@@ -288,13 +296,41 @@ class MongoService {
             {
               'tags': {r'$regex': queryText, r'$options': 'i'},
             },
-            // nếu published_year là int thì phải convert queryText -> int
-            if (int.tryParse(queryText) != null)
-              {'published_year': int.parse(queryText)},
           ],
         },
-      },
-    ];
+      });
+    }
+
+    if (selectedYear != null && selectedYear.isNotEmpty) {
+      final year = int.tryParse(selectedYear);
+      if (year != null) {
+        pipeline.add({
+          r'$match': {'published_year': year},
+        });
+      }
+    }
+
+    // Search theo khoảng năm
+    if ((fromYear != null && fromYear.isNotEmpty) ||
+        (toYear != null && toYear.isNotEmpty)) {
+      final match = <String, Object>{};
+
+      final from = int.tryParse(fromYear ?? '');
+      final to = int.tryParse(toYear ?? '');
+
+      if (from != null) {
+        match[r'$gte'] = from;
+      }
+      if (to != null) {
+        match[r'$lte'] = to;
+      }
+
+      if (match.isNotEmpty) {
+        pipeline.add({
+          r'$match': {'published_year': match},
+        });
+      }
+    }
 
     final result = await books.aggregateToStream(pipeline).toList();
     return result.map((doc) => Book.fromJson(doc)).toList();
@@ -370,5 +406,26 @@ class MongoService {
     final result = await borrowRecords.aggregateToStream(pipeline).toList();
 
     return result.map((doc) => BorrowRecord.fromJson(doc)).toList();
+  }
+
+  Future<List<String>> getPublishedYears() async {
+    final pipeline = [
+      {
+        r'$group': {'_id': r'$published_year'},
+      },
+      {
+        r'$sort': {'_id': 1},
+      },
+      {
+        r'$project': {
+          'year': {r'$toString': r'$_id'},
+          '_id': 0,
+        },
+      },
+    ];
+
+    final result = await books.aggregateToStream(pipeline).toList();
+
+    return result.map((doc) => doc['year'] as String).toList();
   }
 }

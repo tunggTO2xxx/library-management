@@ -40,6 +40,8 @@ class CommonTextField extends StatelessWidget {
     this.suffix,
     this.onTap,
     this.borderRadius,
+    this.width,
+    this.textStyle,
     super.key,
   });
 
@@ -79,6 +81,8 @@ class CommonTextField extends StatelessWidget {
   final Widget? suffix;
   final VoidCallback? onTap;
   final BorderRadiusGeometry? borderRadius;
+  final double? width;
+  final TextStyle? textStyle;
 
   @override
   Widget build(BuildContext context) {
@@ -93,6 +97,7 @@ class CommonTextField extends StatelessWidget {
         ],
         Container(
           height: height ?? 42,
+          width: width,
           decoration: BoxDecoration(
             border: Border.all(
               width: 0.5,
@@ -191,9 +196,11 @@ class CommonTextField extends StatelessWidget {
                     color: Colors.transparent,
                   ),
                 ),
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(color: textColor),
+                style:
+                    textStyle ??
+                    Theme.of(
+                      context,
+                    ).textTheme.titleMedium?.copyWith(color: textColor),
               );
             },
           ),
