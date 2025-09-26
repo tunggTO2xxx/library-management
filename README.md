@@ -47,6 +47,7 @@ The project supports two roles: **User** and **Librarian (Admin)**, with differe
 ├── pubspec.lock
 └── pubspec.yaml
 
+```
 ---
 
 ## ⚡ Getting Started  
