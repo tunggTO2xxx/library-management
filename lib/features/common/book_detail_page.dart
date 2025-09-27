@@ -4,6 +4,7 @@ import 'package:library_management/common/gap.dart';
 import 'package:library_management/constants/app_colors.dart';
 import 'package:library_management/features/user/admin/book_addition_information.dart';
 import 'package:library_management/model/book.dart';
+import 'package:library_management/model/borrow_record.dart';
 import 'package:library_management/model/user.dart';
 import 'package:library_management/service/local_storage_service.dart';
 import 'package:library_management/service/mongo_service.dart';
@@ -20,7 +21,9 @@ class BookDetailPage extends StatefulWidget {
 class _BookDetailPageState extends State<BookDetailPage> {
   late MongoService mongo;
   var _relatedBooks = <Book>[];
+  var _borrowBooks = <BorrowRecord>[];
   User? _user;
+  bool _isBorrowedBook = false;
 
   @override
   void initState() {
@@ -30,6 +33,12 @@ class _BookDetailPageState extends State<BookDetailPage> {
       var relatedTagBooks = await mongo.getRelatedTagBook(widget.book.id ?? '');
       _relatedBooks = [...relatedTagBooks];
       _user = await LocalStorageService().getUser();
+      _borrowBooks = await mongo.getBorrowRecords(
+        status: 'borrowed',
+        userId: _user?.id,
+        bookId: widget.book.id,
+      );
+      _isBorrowedBook = _borrowBooks.isNotEmpty;
       setState(() {});
     });
   }
@@ -159,12 +168,25 @@ class _BookDetailPageState extends State<BookDetailPage> {
                       const SizedBox(height: 24),
 
                       /// Buttons
-                      CommonButton(
-                        height: 48,
-                        textButton: 'Get this book',
-                        colorButton: AppColors.mainColorYellow,
-                        onPress: () {},
-                      ),
+                      _user?.role == 'reader'
+                          ? CommonButton(
+                              height: 48,
+                              textButton: _isBorrowedBook
+                                  ? 'Return book'
+                                  : 'Get this book',
+                              colorButton: _isBorrowedBook
+                                  ? AppColors.bgColor
+                                  : AppColors.mainColorYellow,
+                              textStyle: TextStyle(
+                                color: _isBorrowedBook
+                                    ? Colors.white
+                                    : Colors.black,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              onPress: borrowOrReturnBook,
+                            )
+                          : SizedBox(),
 
                       Gap.h20,
 
@@ -250,5 +272,24 @@ class _BookDetailPageState extends State<BookDetailPage> {
         ],
       ),
     );
+  }
+
+  Future<void> borrowOrReturnBook() async {
+    if (_isBorrowedBook) {
+      final borrowRecordId = _borrowBooks.first.id;
+
+      if (borrowRecordId != null) {
+        mongo.returnBook(borrowRecordId, widget.book.id ?? '');
+      }
+
+      _isBorrowedBook = false;
+      setState(() {});
+
+      return;
+    }
+
+    mongo.borrowBook(_user?.id ?? '', widget.book.id ?? '');
+    _isBorrowedBook = true;
+    setState(() {});
   }
 }

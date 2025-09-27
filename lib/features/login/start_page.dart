@@ -4,6 +4,7 @@ import 'package:library_management/common/common_button.dart';
 import 'package:library_management/common/gap.dart';
 import 'package:library_management/features/dashboard/dashboard_page.dart';
 import 'package:library_management/features/login/login/login_page.dart';
+import 'package:library_management/features/login/signin/signin_page.dart';
 import 'package:library_management/service/local_storage_service.dart';
 
 class StartPage extends StatefulWidget {
@@ -68,7 +69,12 @@ class _StartPageState extends State<StartPage> {
                     Gap.h15,
                     CommonButton(
                       textButton: 'Create Account',
-                      onPress: () {},
+                      onPress: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => SigninPage()),
+                        );
+                      },
                       height: 62,
                       width: width * 0.7,
                       colorButton: Color(0xFFA28D4F),

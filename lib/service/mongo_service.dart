@@ -40,6 +40,26 @@ class MongoService {
     return null;
   }
 
+  Future<void> createUser({
+    required String username,
+    required String passwordHash,
+    required String fullName,
+    required String email,
+    String role = "reader",
+  }) async {
+    final now = DateTime.now().toUtc();
+
+    await users.insertOne({
+      'username': username,
+      'password_hash': passwordHash,
+      'full_name': fullName,
+      'email': email,
+      'role': role,
+      'created_at': now,
+      'updated_at': now,
+    });
+  }
+
   /// Lấy list cuốn sách và tham chiếu sang các collection Author và Categoriry
   Future<List<Book>> getBooks() async {
     final pipeline = [
@@ -339,6 +359,7 @@ class MongoService {
   Future<List<BorrowRecord>> getBorrowRecords({
     String? status,
     String? userId,
+    String? bookId,
   }) async {
     final pipeline = [
       {
@@ -379,6 +400,13 @@ class MongoService {
       final id = ObjectId.fromHexString(userId);
       pipeline.add({
         r'$match': {'user_id': id},
+      });
+    }
+
+    if (bookId != null) {
+      final id = ObjectId.fromHexString(bookId);
+      pipeline.add({
+        r'$match': {'book_id': id},
       });
     }
 
@@ -427,5 +455,43 @@ class MongoService {
     final result = await books.aggregateToStream(pipeline).toList();
 
     return result.map((doc) => doc['year'] as String).toList();
+  }
+
+  Future<void> borrowBook(String userId, String bookId) async {
+    final now = DateTime.now().toUtc();
+    final nowUtc = now.toIso8601String();
+    final due = DateTime(
+      now.year,
+      now.month + 1,
+      now.day,
+      now.hour,
+      now.minute,
+      now.second,
+    ).toUtc().toIso8601String();
+
+    await borrowRecords.insertOne({
+      'user_id': ObjectId.fromHexString(userId),
+      'book_id': ObjectId.fromHexString(bookId),
+      'borrowed_at': nowUtc,
+      'due_at': due,
+      'returned_at': null,
+      'status': 'borrowed',
+    });
+  }
+
+  Future<void> returnBook(String borrowRecordId, String bookRecordId) async {
+    final recordId = ObjectId.fromHexString(borrowRecordId);
+    final bookId = ObjectId.fromHexString(bookRecordId);
+
+    final nowUtc = DateTime.now().toUtc().toIso8601String();
+
+    // Update borrow record: set returned_at + status
+    await borrowRecords.updateOne(
+      where.id(recordId),
+      modify.set('returned_at', nowUtc).set('status', 'returned'),
+    );
+
+    // Increase available_copies of the book
+    await books.updateOne(where.id(bookId), modify.inc('available_copies', 1));
   }
 }

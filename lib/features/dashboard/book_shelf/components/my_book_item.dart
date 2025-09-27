@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:library_management/common/common_bottom_sheet.dart';
+import 'package:library_management/common/common_button.dart';
 import 'package:library_management/common/gap.dart';
 import 'package:library_management/constants/app_colors.dart';
 import 'package:library_management/features/dashboard/book_shelf/components/progress_bar.dart';
@@ -7,9 +8,10 @@ import 'package:library_management/model/borrow_record.dart';
 import 'package:library_management/utils/date_time_extension.dart';
 
 class MyBookItem extends StatelessWidget {
-  const MyBookItem({super.key, required this.borrowRecord});
+  const MyBookItem({super.key, required this.borrowRecord, this.onReturnBook});
 
   final BorrowRecord borrowRecord;
+  final VoidCallback? onReturnBook;
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +74,7 @@ class MyBookItem extends StatelessWidget {
   void _showBorrowRecordDetail(BuildContext context) {
     CommonBottomSheet.show(
       context: context,
-      height: 330,
+      height: borrowRecord.status == 'returned' ? 330 : 400,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -131,6 +133,27 @@ class MyBookItem extends StatelessWidget {
             title: 'Returned at: ',
             dateTime: borrowRecord.returnedAt,
           ),
+
+          borrowRecord.status == 'returned'
+              ? SizedBox()
+              : Column(
+                  children: [
+                    Gap.h20,
+                    CommonButton(
+                      height: 48,
+                      textButton: 'Return book',
+                      colorButton: AppColors.bgColor,
+                      textStyle: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      onPress: () {
+                        onReturnBook?.call();
+                      },
+                    ),
+                  ],
+                ),
         ],
       ),
     );

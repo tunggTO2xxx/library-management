@@ -30,13 +30,25 @@ class _BookShelfPageState extends State<MyBookShelfPage> {
     });
   }
 
+  Future<void> _loadData() async {
+    var borrowRecordList = await mongo.getBorrowRecords(userId: _user?.id);
+    setState(() {
+      borrowRecords = [...borrowRecordList];
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(
-          'My Book Shelf'.toUpperCase(),
-          style: TextStyle(fontSize: 24, color: Colors.white),
+        GestureDetector(
+          onTap: () {
+            _loadData();
+          },
+          child: Text(
+            'My Book Shelf'.toUpperCase(),
+            style: TextStyle(fontSize: 24, color: Colors.white),
+          ),
         ),
         Gap.h20,
         Expanded(
@@ -55,19 +67,36 @@ class _BookShelfPageState extends State<MyBookShelfPage> {
               children: [
                 Gap.h40,
                 Expanded(
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    padding: EdgeInsets.only(bottom: 30),
-                    itemBuilder: (context, index) {
-                      final borrowRecord = borrowRecords[index];
+                  child: borrowRecords.isEmpty
+                      ? Center(
+                          child: Text('Let\'s borrow some interesting books.'),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: () => _loadData(),
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            padding: EdgeInsets.only(bottom: 30),
+                            itemBuilder: (context, index) {
+                              final borrowRecord = borrowRecords[index];
 
-                      return MyBookItem(borrowRecord: borrowRecord);
-                    },
-                    separatorBuilder: (context, index) {
-                      return Divider();
-                    },
-                    itemCount: borrowRecords.length,
-                  ),
+                              return MyBookItem(
+                                borrowRecord: borrowRecord,
+                                onReturnBook: () {
+                                  borrowOrReturnBook(borrowRecord).whenComplete(
+                                    () {
+                                      _loadData();
+                                    },
+                                  );
+                                  Navigator.of(context).pop();
+                                },
+                              );
+                            },
+                            separatorBuilder: (context, index) {
+                              return Divider();
+                            },
+                            itemCount: borrowRecords.length,
+                          ),
+                        ),
                 ),
               ],
             ),
@@ -75,5 +104,14 @@ class _BookShelfPageState extends State<MyBookShelfPage> {
         ),
       ],
     );
+  }
+
+  Future<void> borrowOrReturnBook(BorrowRecord borrowRecord) async {
+    final borrowRecordId = borrowRecord.id;
+    final bookId = borrowRecord.book?.id;
+
+    if (borrowRecordId != null && bookId != null) {
+      mongo.returnBook(borrowRecordId, bookId);
+    }
   }
 }
