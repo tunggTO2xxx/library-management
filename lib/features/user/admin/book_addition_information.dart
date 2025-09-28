@@ -86,7 +86,10 @@ class _BookAdditionInformationState extends State<BookAdditionInformation> {
       appBar: CommonAppBar(
         height: 45,
         title: Center(
-          child: Text('New Book', style: TextStyle(color: Colors.white)),
+          child: Text(
+            widget.book != null ? 'Update Book' : 'New Book',
+            style: TextStyle(color: Colors.white),
+          ),
         ),
         color: AppColors.bgColor,
         iconColor: Colors.white,

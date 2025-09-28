@@ -56,6 +56,7 @@ class _BorrowBookHistoryPageState extends State<BorrowBookHistoryPage> {
                 Gap.h20,
                 Expanded(
                   child: ListView.separated(
+                    padding: EdgeInsets.only(bottom: 30),
                     shrinkWrap: true,
                     itemBuilder: (context, index) {
                       final borrowRecord = borrowRecords[index];

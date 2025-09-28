@@ -2,6 +2,9 @@ import 'package:library_management/model/author.dart';
 import 'package:library_management/model/book.dart';
 import 'package:library_management/model/borrow_record.dart';
 import 'package:library_management/model/category.dart';
+import 'package:library_management/model/statistic/borrowed_book_by_month.dart';
+import 'package:library_management/model/statistic/library_stats.dart';
+import 'package:library_management/model/statistic/the_highest_borrowed_category.dart';
 import 'package:library_management/model/user.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 
@@ -493,5 +496,219 @@ class MongoService {
 
     // Increase available_copies of the book
     await books.updateOne(where.id(bookId), modify.inc('available_copies', 1));
+  }
+
+  /// Book Statistic Function
+
+  // Get data for status of books: borrowed, available, overdue
+  Future<Map<String, dynamic>?> getBorrowStats() async {
+    final pipeline = <Map<String, Object>>[
+      {
+        r'$lookup': {
+          'from': 'Books',
+          'localField': 'book_id',
+          'foreignField': '_id',
+          'as': 'book',
+        },
+      },
+      {r'$unwind': r'$book'},
+      {
+        r'$project': {
+          'status': 1,
+          'due_at': 1,
+          'returned_at': 1,
+          'isOverdue': {
+            r'$and': [
+              {
+                r'$eq': [r'$status', 'borrowed'],
+              },
+              {
+                r'$lt': [r'$due_at', DateTime.now().toUtc().toIso8601String()],
+              },
+            ],
+          },
+        },
+      },
+      {
+        r'$group': {
+          '_id': null,
+          'borrowed': {
+            r'$sum': {
+              r'$cond': [
+                {
+                  r'$eq': [r'$status', 'borrowed'],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          'overdue': {
+            r'$sum': {
+              r'$cond': [r'$isOverdue', 1, 0],
+            },
+          },
+          'returned': {
+            r'$sum': {
+              r'$cond': [
+                {
+                  r'$eq': [r'$status', 'returned'],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+      {
+        r'$project': {
+          '_id': 0,
+          'borrowed': 1,
+          'overdue': 1,
+          'available': r'$returned',
+        },
+      },
+    ];
+
+    final result = await borrowRecords.aggregateToStream(pipeline).toList();
+    return result.isNotEmpty ? result.first : null;
+  }
+
+  // Get data for top 5 categories which are highest borrowed
+  Future<List<TheHighestBorrowedCategory>> getTop5Categories() async {
+    final pipeline = <Map<String, Object>>[
+      {
+        r'$lookup': {
+          'from': 'Books',
+          'localField': 'book_id',
+          'foreignField': '_id',
+          'as': 'book',
+        },
+      },
+      {r'$unwind': r'$book'},
+      {
+        r'$lookup': {
+          'from': 'Categories',
+          'localField': 'book.category_ids',
+          'foreignField': '_id',
+          'as': 'categories',
+        },
+      },
+      {r'$unwind': r'$categories'},
+      {
+        r'$group': {
+          '_id': r'$categories.name',
+          'borrowCount': {r'$sum': 1},
+        },
+      },
+      {
+        r'$sort': {'borrowCount': -1},
+      },
+      {r'$limit': 5},
+      {
+        r'$project': {'_id': 0, 'type': r'$_id', 'borrowCount': 1},
+      },
+    ];
+
+    final result = await borrowRecords.aggregateToStream(pipeline).toList();
+    return result
+        .map((doc) => TheHighestBorrowedCategory.fromJson(doc))
+        .toList();
+  }
+
+  // Get data the number of borrowed books by month
+  Future<List<BorrowedBookByMonth>> getBorrowStatsLast5Months() async {
+    final now = DateTime.now().toUtc();
+    final fiveMonthsAgo = DateTime(
+      now.year,
+      now.month - 4,
+      1,
+    ).toIso8601String();
+
+    final pipeline = <Map<String, Object>>[
+      {
+        r'$match': {
+          'borrowed_at': {r'$gte': fiveMonthsAgo},
+        },
+      },
+      {
+        r'$addFields': {
+          'borrowed_date': {r'$toDate': r'$borrowed_at'},
+        },
+      },
+      {
+        r'$group': {
+          '_id': {
+            'year': {r'$year': r'$borrowed_date'},
+            'month': {r'$month': r'$borrowed_date'},
+          },
+          'borrowCount': {r'$sum': 1},
+        },
+      },
+      {
+        r'$sort': {'_id.year': 1, '_id.month': 1},
+      },
+      {
+        r'$project': {
+          '_id': 0,
+          'month': {
+            r'$concat': [
+              {r'$toString': r'$_id.month'},
+            ],
+          },
+          'borrowCount': 1,
+        },
+      },
+    ];
+
+    final result = await borrowRecords.aggregateToStream(pipeline).toList();
+
+    final List<Map<String, dynamic>> finalResult = [];
+    for (int i = 4; i >= 0; i--) {
+      final date = DateTime(now.year, now.month - i, 1);
+      final monthKey = date.month.toString();
+
+      final existing = result.firstWhere((e) {
+        return e['month'] == monthKey;
+      }, orElse: () => {'month': monthKey, 'borrowCount': 0});
+
+      finalResult.add(existing);
+    }
+
+    return finalResult.map((doc) => BorrowedBookByMonth.fromJson(doc)).toList();
+  }
+
+  // Get data all stats library
+  Future<LibraryStats> getLibraryStats() async {
+    // tổng số sách
+    final totalBooks = await books.aggregateToStream([
+      {
+        r'$group': {
+          '_id': null,
+          'count': {r'$sum': r'$total_copies'},
+        },
+      },
+    ]).toList();
+
+    // tổng số sách đang mượn
+    final borrowedBooks = await borrowRecords.count({'status': 'borrowed'});
+
+    // tổng số tác giả
+    final totalAuthors = await authors.count();
+
+    // tổng số thể loại
+    final totalCategories = await categories.count();
+
+    // tổng số user role == reader
+    final totalReaders = await users.count({'role': 'reader'});
+
+    return LibraryStats(
+      totalBooks: totalBooks.isNotEmpty ? totalBooks.first['count'] as int : 0,
+      borrowedBooks: borrowedBooks,
+      totalAuthors: totalAuthors,
+      totalCategories: totalCategories,
+      totalReaders: totalReaders,
+    );
   }
 }
