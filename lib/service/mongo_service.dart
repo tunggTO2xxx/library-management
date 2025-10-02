@@ -31,6 +31,7 @@ class MongoService {
     borrowRecords = db.collection('BorrowRecords');
   }
 
+  /// Login Function
   Future<User?> login(String username, String passwordHash) async {
     final result = await users.findOne({
       "username": username,
@@ -43,6 +44,7 @@ class MongoService {
     return null;
   }
 
+  /// Create User Function
   Future<void> createUser({
     required String username,
     required String passwordHash,
@@ -88,6 +90,7 @@ class MongoService {
     return bookList.map((json) => Book.fromJson(json)).toList();
   }
 
+  /// Lấy danh sách quyển sách được mượn nhiều nhất
   Future<List<Book>> getBookSortByTheMostBorrowed() async {
     final pipeline = [
       {
@@ -359,6 +362,7 @@ class MongoService {
     return result.map((doc) => Book.fromJson(doc)).toList();
   }
 
+  /// Danh sách các bản ghi mượn sách
   Future<List<BorrowRecord>> getBorrowRecords({
     String? status,
     String? userId,

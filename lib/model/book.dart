@@ -46,11 +46,9 @@ class Book {
   @JsonKey(name: 'image_url')
   final String? imageUrl;
 
-  @DateTimeConverter()
   @JsonKey(name: 'created_at')
   final DateTime? createdAt;
 
-  @DateTimeConverter()
   @JsonKey(name: 'updated_at')
   final DateTime? updatedAt;
 

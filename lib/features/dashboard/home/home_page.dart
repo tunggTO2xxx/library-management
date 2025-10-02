@@ -28,6 +28,7 @@ class _HomePageState extends State<HomePage> {
       _user = await LocalStorageService().getUser();
       final theMostBorrowedBook = await mongo.getBookSortByTheMostBorrowed();
       _theMostBorrowedBooks = [...theMostBorrowedBook];
+      if (!mounted) return;
       setState(() {});
     });
   }

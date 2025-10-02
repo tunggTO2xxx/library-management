@@ -20,6 +20,7 @@ class _BookShelfPageState extends State<BookShelfPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       _user = await LocalStorageService().getUser();
+      if (!mounted) return;
       setState(() {});
     });
   }

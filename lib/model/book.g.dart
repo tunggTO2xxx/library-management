@@ -28,8 +28,12 @@ Book _$BookFromJson(Map<String, dynamic> json) => Book(
   totalCopies: (json['total_copies'] as num?)?.toInt(),
   availableCopies: (json['available_copies'] as num?)?.toInt(),
   imageUrl: json['image_url'] as String?,
-  createdAt: const DateTimeConverter().fromJson(json['created_at']),
-  updatedAt: const DateTimeConverter().fromJson(json['updated_at']),
+  createdAt: json['created_at'] == null
+      ? null
+      : DateTime.parse(json['created_at'] as String),
+  updatedAt: json['updated_at'] == null
+      ? null
+      : DateTime.parse(json['updated_at'] as String),
   isDelete: json['is_delete'] as bool?,
 );
 
@@ -47,7 +51,7 @@ Map<String, dynamic> _$BookToJson(Book instance) => <String, dynamic>{
   'total_copies': ?instance.totalCopies,
   'available_copies': ?instance.availableCopies,
   'image_url': ?instance.imageUrl,
-  'created_at': ?const DateTimeConverter().toJson(instance.createdAt),
-  'updated_at': ?const DateTimeConverter().toJson(instance.updatedAt),
+  'created_at': ?instance.createdAt?.toIso8601String(),
+  'updated_at': ?instance.updatedAt?.toIso8601String(),
   'is_delete': ?instance.isDelete,
 };

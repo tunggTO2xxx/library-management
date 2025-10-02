@@ -23,6 +23,7 @@ class _BorrowBookHistoryPageState extends State<BorrowBookHistoryPage> {
     mongo = MongoService();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       var borrowRecordList = await mongo.getBorrowRecords();
+      if (!mounted) return;
       borrowRecords = [...borrowRecordList];
       setState(() {});
     });
